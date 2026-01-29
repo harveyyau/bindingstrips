@@ -19,7 +19,7 @@ include <BOSL2/std.scad>
 /* [Main Dimensions] */
 strip_length_mm = 1000;  // [300:50:2000] Target usable length when uncoiled (mm)
 strip_width_mm = 6.0;    // [3.0:0.5:10.0] Total width across all stripes (mm)
-strip_height_mm = 1.5;   // [1.0:0.1:3.0] Thickness / Z-height (mm)
+strip_height_mm = 1.0;   // [0.5:0.1:3.0] Thickness / Z-height (mm) - thinner for easier uncoiling
 
 /* [Purfling Stripes] */
 // Define color stripes as: [["Name", width_mm], ...]
@@ -35,9 +35,9 @@ purfling_stripe_3_name = "Black";
 purfling_stripe_3_width = 2.5;  // [0:0.1:10] Width (mm)
 
 /* [Spiral Parameters] */
-min_inner_radius_mm = 15;   // [10:1:30] Minimum bend radius (smaller = tighter coil, risk of cracking)
-spiral_pitch_mm = 8.0;      // [6:0.5:15] Distance between coil centerlines (must be ≥ width + clearance)
-clearance_mm = 2.0;         // [1.0:0.5:5.0] Extra gap between coils (prevents fusing during warp)
+min_inner_radius_mm = 30;   // [20:1:50] Minimum bend radius (smaller = tighter coil, risk of cracking)
+spiral_pitch_mm = 10.0;     // [8:0.5:20] Distance between coil centerlines (must be ≥ width + clearance)
+clearance_mm = 4.0;         // [2.0:0.5:8.0] Extra gap between coils (prevents fusing during warp) - CRITICAL!
 
 /* [Lead In/Out] */
 lead_in_mm = 40;            // [20:5:100] Straight segment at start (for grabbing/clamping)
@@ -90,6 +90,20 @@ function normalize_2d(v) =
     let(mag = sqrt(v[0]*v[0] + v[1]*v[1]))
     mag > 0 ? [v[0]/mag, v[1]/mag] : [1, 0];
 
+// Remove consecutive duplicate points from path (BOSL2 requirement)
+function deduplicate_path(path, i=1, result=[]) =
+    (len(path) == 0) ? [] :  // Empty path
+    (i == 0) ? deduplicate_path(path, 1, [path[0]]) :  // Initialize with first point
+    (i >= len(path)) ? result :  // Done
+    let(
+        last_pt = result[len(result)-1],
+        curr_pt = path[i],
+        dist = sqrt(pow(curr_pt[0]-last_pt[0], 2) + pow(curr_pt[1]-last_pt[1], 2) + pow(curr_pt[2]-last_pt[2], 2))
+    )
+    (dist < 0.001) ?  // Same point (within tolerance)
+        deduplicate_path(path, i+1, result) :  // Skip duplicate
+        deduplicate_path(path, i+1, concat(result, [path[i]]));  // Add point
+
 // ============================================================================
 // SPIRAL PATH GENERATOR
 // ============================================================================
@@ -131,9 +145,15 @@ function spiral_points(
             [last_pt[0] + end_tangent[0] * i,
              last_pt[1] + end_tangent[1] * i,
              0]
-        ]
+        ],
+        
+        // Combine all path segments
+        full_path = concat(lead_in_pts, spiral_core, lead_out_pts),
+        
+        // Deduplicate consecutive duplicate points (BOSL2 requirement)
+        clean_path = deduplicate_path(full_path)
     )
-    concat(lead_in_pts, spiral_core, lead_out_pts);
+    clean_path;
 
 // Generate spiral core with length accumulation
 function generate_spiral_core(target_len, r0, pitch, step, complete_turn) =

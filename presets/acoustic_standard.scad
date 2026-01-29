@@ -38,16 +38,16 @@ include <../src/guitar_binding.scad>
 // Override parameters for acoustic standard binding
 strip_length_mm = 1000;  // [500:50:2000] Usable length after uncoiling
 strip_width_mm = 6.0;    // [3.0:0.5:10.0] Binding width
-strip_height_mm = 1.5;   // [1.0:0.1:3.0] Binding thickness
+strip_height_mm = 1.0;   // [0.5:0.1:3.0] Binding thickness (thinner = easier to uncoil)
 
 // Single color binding
 enable_purfling = false;
 layers = [["Binding", 6.0]];
 
-// Recommended spiral parameters for this size
-min_inner_radius_mm = 15;
-spiral_pitch_mm = 8.0;
-clearance_mm = 2.0;
+// Optimized spiral parameters to maximize bed usage and prevent overlap
+min_inner_radius_mm = 30;   // Larger for easier uncoiling
+spiral_pitch_mm = 10.0;     // Width (6mm) + clearance (4mm) = 10mm
+clearance_mm = 4.0;         // CRITICAL: 4mm gap prevents coils from fusing!
 
 echo("=== ACOUSTIC STANDARD BINDING ===");
 echo("For: Dreadnought, OM, 000, Grand Auditorium");
