@@ -1,0 +1,54 @@
+# ============================================================================
+# GUITAR BINDING GENERATOR - .gitignore
+# ============================================================================
+
+# Temporary build outputs (users generate these locally)
+examples/output/*.stl
+examples/output/*.3mf
+
+# OpenSCAD cache files
+*.echo
+*.csg
+*.off
+*.deps
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Virtual environments (if any)
+venv/
+env/
+ENV/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+
+# Temporary files
+.3mf_temp/
+tmp/
+temp/
+
+# OS-specific
+Thumbs.db
+desktop.ini
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Test outputs (but keep examples/)
+test_output/
