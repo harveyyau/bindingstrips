@@ -1,23 +1,20 @@
 // ============================================================================
-// QUICK TEST - Fast Render Version
+// FULL GENERATION TEST FILE
 // ============================================================================
-// Renders a 300mm test coil in ~30 seconds for rapid iteration
-// Use this to validate parameters before committing to a full-length print
+// No more "quick test" - always do full generation
+// This file kept for testing but uses same parameters as full presets
 // ============================================================================
 
 include <guitar_binding.scad>
 
-// OVERRIDE: Short length for fast rendering
-strip_length_mm = 300;  // Renders much faster than 1000mm+
+// Full generation parameters (same as acoustic_standard)
+strip_length_mm = 1600;     // Full typical binding length
+strip_width_mm = 1.5;       // THIN (horizontal)
+strip_height_mm = 6.0;      // TALL (vertical Z)
+max_bed_diameter_mm = 240;  // Full bed
+min_center_radius_mm = 10;  // Spiral to center for maximum length
+clearance_mm = 1.0;         // 1mm gap
 
-// Use optimized parameters that prevent overlap
-min_inner_radius_mm = 30;
-spiral_pitch_mm = 10.0;
-clearance_mm = 4.0;
-strip_height_mm = 1.0;  // Thinner for testing
-
-// All other parameters inherited from guitar_binding.scad
-// Adjust via Customizer or by adding overrides here
-
-echo("=== QUICK TEST MODE ===");
-echo("Rendering 300mm test coil with NO OVERLAP - should complete in 30-60 seconds");
+echo("=== FULL GENERATION TEST ===");
+echo("1600mm binding on FULL 240mm bed diameter");
+echo("Spiral starts at outer edge, goes INWARD to center");

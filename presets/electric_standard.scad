@@ -5,51 +5,38 @@
   FOR: Stratocaster, Telecaster, Les Paul, SG, and most electric guitars
   
   TYPICAL PERIMETER: 700-800mm
-  THIS PRESET PRODUCES: 800mm usable length (includes 15% safety margin)
+  THIS PRESET PRODUCES: ~1600mm usable length (bed-filling spiral!)
   
-  PRINT TIME: ~3-4 hours (Bambu X1C, 0.2mm layers, 100mm/s)
-  FILAMENT NEEDED: ~30g ABS (single color)
-  BED REQUIREMENT: Fits Bambu X1/P1S (256×256mm bed)
+  STRATEGY: Fills entire 240mm bed diameter for MAXIMUM outer bend radius
+  → Starts at bed edge (120mm radius), spirals INWARD to center
+  → Outer coils have gentle 120mm radius = very easy to unbend and install!
+  → Same dimensions as acoustic (1.5mm × 6mm is universal)
   
-  DIMENSIONS:
-  - Width: 5mm (typical electric guitar binding width)
-  - Thickness: 1.5mm
-  - Single color (choose your filament)
+  PRINT TIME: ~2-3 hours (Bambu X1C, 0.2mm layers, 100mm/s)
+  FILAMENT NEEDED: ~30-40g ABS (single color)
+  BED REQUIREMENT: Fills Bambu X1/P1S (256×256mm bed) completely
   
-  MEASURING YOUR GUITAR:
-  1. Use flexible measuring tape around body edge where binding will go
-  2. Add 15% for waste, fitting, and safety: measured × 1.15
-  3. Most electric guitars need 650-850mm after the 15% margin
-  
-  INSTALLATION TIPS:
-  - Uncoil carefully - warm with heat gun if ABS is brittle
-  - Test fit before gluing
-  - Sand/scrape edges if needed (built-in ±0.2-0.3mm tolerance)
-  - Electric binding channels are often shallower - verify fit
-  
-  TO CUSTOMIZE:
-  - Open in OpenSCAD
-  - Use Window → Customizer to adjust length, width via GUI
-  - Or edit parameters below directly
+  DIMENSIONS: 1.5mm WIDE × 6mm TALL (standard guitar binding profile)
 */
 // ============================================================================
 
 include <../src/guitar_binding.scad>
 
-// Override parameters for electric guitar binding
-strip_length_mm = 800;   // [500:50:2000] Usable length after uncoiling
-strip_width_mm = 5.0;    // [3.0:0.5:10.0] Binding width
-strip_height_mm = 1.5;   // [1.0:0.1:3.0] Binding thickness
+// Override parameters - Standard electric guitar binding (same as acoustic!)
+strip_length_mm = 1600;  // [1000:100:3000] Plenty for any electric
+strip_width_mm = 1.5;    // [1.0:0.5:3.0] Standard width
+strip_height_mm = 6.0;   // [3.0:0.5:10.0] Standard height
 
 // Single color binding
 enable_purfling = false;
-layers = [["Binding", 5.0]];
+layers = [["Binding", 1.5]];
 
-// Recommended spiral parameters for this size
-min_inner_radius_mm = 15;
-spiral_pitch_mm = 7.0;   // Slightly tighter pitch for smaller total length
-clearance_mm = 2.0;
+// BED-FILLING INWARD SPIRAL
+max_bed_diameter_mm = 240;  // Full bed
+min_center_radius_mm = 10;  // Spiral to center
+clearance_mm = 1.0;         // 1mm gap (pitch auto = 1.5+1.0=2.5mm)
 
-echo("=== ELECTRIC STANDARD BINDING ===");
+echo("=== ELECTRIC STANDARD BINDING (Inward Spiral) ===");
 echo("For: Stratocaster, Telecaster, Les Paul, SG");
-echo("Output: 800mm × 5mm × 1.5mm");
+echo("Output: ~1600mm × 1.5mm WIDE × 6mm TALL (fills 240mm bed)");
+echo("Spiral: 120mm outer radius (GENTLE!) → 10mm inner");

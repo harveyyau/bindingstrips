@@ -5,76 +5,60 @@
   FOR: Classical guitar rosette purfling, decorative inlay
   
   TYPICAL USE: Rosette decoration, soundhole rings, decorative accents
-  THIS PRESET PRODUCES: 600mm usable length (includes 15% safety margin)
+  THIS PRESET PRODUCES: ~1400mm usable length (bed-filling spiral!)
   
-  PRINT TIME: ~3-4 hours (Bambu X1C, 0.2mm layers, 100mm/s)
-  FILAMENT NEEDED: ~25g ABS total (3 colors: Black, White, Black)
-    - Black: ~15g (two outer stripes)
-    - White: ~10g (center stripe)
-  BED REQUIREMENT: Fits Bambu X1/P1S (256×256mm bed)
+  STRATEGY: Fills entire 240mm bed diameter for MAXIMUM outer bend radius
+  → Starts at bed edge (120mm radius), spirals INWARD to center
+  → Three separate color stripes: Black-White-Black pattern
+  → Outer coils have gentle radius = easy to install around curves
   
-  DIMENSIONS:
-  - Total width: 5.5mm (Black 2mm + White 1.5mm + Black 2mm)
-  - Thickness: 1.2mm (thinner for decorative use)
-  - Three colors: BLACK-WHITE-BLACK pattern
+  PRINT TIME: ~2-3 hours (Bambu X1C, 0.2mm layers, 100mm/s)
+  FILAMENT NEEDED: ~35g ABS total (3 colors)
+    - Black: ~20g (two stripes: 0.75mm each)
+    - White: ~15g (center stripe: 0.5mm)
+  BED REQUIREMENT: Fills Bambu X1/P1S (256×256mm bed) completely
   
-  STRIPE LAYOUT:
-  - Outer Black: 2.0mm wide
-  - Center White: 1.5mm wide  
-  - Outer Black: 2.0mm wide
-  - Total: 5.5mm
+  DIMENSIONS: Total 2.0mm WIDE × 6mm TALL
+  - Black outer: 0.75mm wide
+  - White center: 0.5mm wide
+  - Black outer: 0.75mm wide
+  - Total: 2.0mm wide × 6mm tall
   
-  EXPORT WORKFLOW:
-  1. Run: ./scripts/print_this.sh classical_purfling_bwb
-  2. This generates 3 separate STL files:
-     - classical_purfling_bwb_L600_W5.5_H1.2_Black.stl (outer stripes combined)
-     - classical_purfling_bwb_L600_W5.5_H1.2_White.stl (center stripe)
-  3. Import .3mf into Bambu Studio
-  4. Assign filaments: Black to P1, White to P2, Black to P3
-  
-  INSTALLATION TIPS:
-  - Stripes are perfectly flush (seamless appearance)
-  - Uncoil carefully - thinner than binding, more delicate
-  - Can be bent to tighter radius than thicker binding
-  - Test fit in rosette channel before gluing
-  
-  TO CUSTOMIZE:
-  - Open in OpenSCAD
-  - Use Window → Customizer to adjust stripe widths individually
-  - Or edit parameters below directly
+  EXPORT: Generates 3 separate STL files (one per color)
 */
 // ============================================================================
 
 include <../src/guitar_binding.scad>
 
-// Override parameters for classical purfling
-strip_length_mm = 600;   // [300:50:2000] Usable length after uncoiling
-strip_width_mm = 5.5;    // Total width (sum of all stripes)
-strip_height_mm = 1.2;   // [1.0:0.1:3.0] Thinner for decorative use
+// Override parameters - Narrower for purfling
+strip_length_mm = 1600;  // [1000:100:3000] Target length
+strip_width_mm = 2.0;    // Total width (sum of all stripes)
+strip_height_mm = 6.0;   // Standard height
 
 // ENABLE MULTI-STRIPE PURFLING
 enable_purfling = true;
 
 // Black-White-Black pattern
 purfling_stripe_1_name = "Black";
-purfling_stripe_1_width = 2.0;
+purfling_stripe_1_width = 0.75;
 purfling_stripe_2_name = "White";
-purfling_stripe_2_width = 1.5;
+purfling_stripe_2_width = 0.5;
 purfling_stripe_3_name = "Black";
-purfling_stripe_3_width = 2.0;
+purfling_stripe_3_width = 0.75;
 
 layers = [
-    ["Black", 2.0],
-    ["White", 1.5],
-    ["Black", 2.0]
+    ["Black", 0.75],
+    ["White", 0.5],
+    ["Black", 0.75]
 ];
 
-// Recommended spiral parameters for this size
-min_inner_radius_mm = 12;  // Can be tighter due to thinner strip
-spiral_pitch_mm = 7.5;
-clearance_mm = 2.0;
+// BED-FILLING INWARD SPIRAL
+max_bed_diameter_mm = 240;  // Full bed
+min_center_radius_mm = 10;  // Spiral to center
+clearance_mm = 1.0;         // 1mm gap (pitch auto = 2.0+1.0=3.0mm)
 
-echo("=== CLASSICAL PURFLING (B-W-B) ===");
+echo("=== CLASSICAL PURFLING (B-W-B, Inward Spiral) ===");
 echo("For: Classical guitar rosette, decorative inlay");
-echo("Output: 600mm × 5.5mm × 1.2mm");
-echo("Stripes: Black (2mm) + White (1.5mm) + Black (2mm)");
+echo("Output: ~1600mm × 2.0mm WIDE × 6mm TALL (fills 240mm bed)");
+echo("Stripes: Black (0.75mm) + White (0.5mm) + Black (0.75mm)");
+echo("Spiral: 120mm outer radius → 10mm inner");

@@ -5,51 +5,38 @@
   FOR: Jumbo, Grand Jumbo, and large-body acoustic guitars
   
   TYPICAL PERIMETER: 1000-1100mm
-  THIS PRESET PRODUCES: 1200mm usable length (includes 15% safety margin)
+  THIS PRESET PRODUCES: ~2000mm usable length (bed-filling spiral!)
   
-  PRINT TIME: ~5-7 hours (Bambu X1C, 0.2mm layers, 100mm/s)
-  FILAMENT NEEDED: ~50g ABS (single color)
-  BED REQUIREMENT: Fits Bambu X1/P1S (256×256mm bed)
+  STRATEGY: Fills entire 240mm bed diameter for MAXIMUM outer bend radius
+  → Starts at bed edge (120mm radius), spirals INWARD to center
+  → Outer coils have gentle 120mm radius = very easy to unbend and install!
+  → Longer binding than standard (wider strip = less turns fit)
   
-  DIMENSIONS:
-  - Width: 6mm (standard binding width)
-  - Thickness: 1.5mm
-  - Single color (choose your filament)
+  PRINT TIME: ~3-4 hours (Bambu X1C, 0.2mm layers, 100mm/s)
+  FILAMENT NEEDED: ~40-50g ABS (single color)
+  BED REQUIREMENT: Fills Bambu X1/P1S (256×256mm bed) completely
   
-  MEASURING YOUR GUITAR:
-  1. Use flexible measuring tape around body edge where binding will go
-  2. Add 15% for waste, fitting, and safety: measured × 1.15
-  3. Jumbo guitars typically need 1050-1150mm after the 15% margin
-  
-  INSTALLATION TIPS:
-  - Uncoil carefully - warm with heat gun if ABS is brittle
-  - Test fit before gluing
-  - Sand/scrape edges if needed (built-in ±0.2-0.3mm tolerance)
-  - For extra-large guitars (>1200mm needed), increase strip_length_mm
-  
-  TO CUSTOMIZE:
-  - Open in OpenSCAD
-  - Use Window → Customizer to adjust length, width via GUI
-  - Or edit parameters below directly
+  DIMENSIONS: 2.0mm WIDE × 6mm TALL (slightly wider binding)
 */
 // ============================================================================
 
 include <../src/guitar_binding.scad>
 
-// Override parameters for jumbo acoustic binding
-strip_length_mm = 1200;  // [500:50:2000] Usable length after uncoiling
-strip_width_mm = 6.0;    // [3.0:0.5:10.0] Binding width
-strip_height_mm = 1.5;   // [1.0:0.1:3.0] Binding thickness
+// Override parameters - Wider binding for jumbo guitars
+strip_length_mm = 2000;  // [1000:100:3000] Target length
+strip_width_mm = 2.0;    // [1.5:0.5:4.0] Wider than standard
+strip_height_mm = 6.0;   // [3.0:0.5:10.0] Standard height
 
 // Single color binding
 enable_purfling = false;
-layers = [["Binding", 6.0]];
+layers = [["Binding", 2.0]];
 
-// Recommended spiral parameters for this size
-min_inner_radius_mm = 15;
-spiral_pitch_mm = 8.0;
-clearance_mm = 2.0;
+// BED-FILLING INWARD SPIRAL
+max_bed_diameter_mm = 240;  // Full bed
+min_center_radius_mm = 10;  // Spiral to center
+clearance_mm = 1.0;         // 1mm gap (pitch auto = 2.0+1.0=3.0mm)
 
-echo("=== ACOUSTIC JUMBO BINDING ===");
+echo("=== ACOUSTIC JUMBO BINDING (Inward Spiral) ===");
 echo("For: Jumbo, Grand Jumbo, large-body acoustics");
-echo("Output: 1200mm × 6mm × 1.5mm");
+echo("Output: ~2000mm × 2.0mm WIDE × 6mm TALL (fills 240mm bed)");
+echo("Spiral: 120mm outer radius (GENTLE!) → 10mm inner");

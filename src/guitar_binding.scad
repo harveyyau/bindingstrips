@@ -17,9 +17,9 @@ include <BOSL2/std.scad>
 // Use OpenSCAD's Customizer (Window → Customizer) to adjust these via GUI
 
 /* [Main Dimensions] */
-strip_length_mm = 1000;  // [300:50:2000] Target usable length when uncoiled (mm)
-strip_width_mm = 6.0;    // [3.0:0.5:10.0] Total width across all stripes (mm)
-strip_height_mm = 1.0;   // [0.5:0.1:3.0] Thickness / Z-height (mm) - thinner for easier uncoiling
+strip_length_mm = 1600;  // [800:100:3000] Target usable length when uncoiled (typical: 1600mm)
+strip_width_mm = 1.5;    // [1.0:0.1:3.0] Width - THIN dimension (horizontal on bed, typically 1.5mm)
+strip_height_mm = 6.0;   // [3.0:0.5:10.0] Height - TALL dimension (vertical Z, typically 6mm)
 
 /* [Purfling Stripes] */
 // Define color stripes as: [["Name", width_mm], ...]
@@ -34,14 +34,17 @@ purfling_stripe_2_width = 1.5;  // [0:0.1:10] Width (mm)
 purfling_stripe_3_name = "Black";
 purfling_stripe_3_width = 2.5;  // [0:0.1:10] Width (mm)
 
-/* [Spiral Parameters] */
-min_inner_radius_mm = 30;   // [20:1:50] Minimum bend radius (smaller = tighter coil, risk of cracking)
-spiral_pitch_mm = 10.0;     // [8:0.5:20] Distance between coil centerlines (must be ≥ width + clearance)
-clearance_mm = 4.0;         // [2.0:0.5:8.0] Extra gap between coils (prevents fusing during warp) - CRITICAL!
+/* [Spiral Parameters - INWARD Spiral from Bed Edge] */
+// NEW STRATEGY: Start at bed edge, spiral INWARD toward center!
+max_bed_diameter_mm = 240;  // [200:10:300] Bed size (spiral starts here and goes inward)
+min_center_radius_mm = 10;  // [5:1:30] Stop when reaching this inner radius
+clearance_mm = 1.0;         // [0.5:0.5:4.0] Gap between coils (1.0mm = tight but safe)
+// AUTOMATIC: spiral_pitch_mm = strip_width_mm + clearance_mm (e.g., 1.5+1.0=2.5mm)
 
 /* [Lead In/Out] */
-lead_in_mm = 40;            // [20:5:100] Straight segment at start (for grabbing/clamping)
-lead_out_mm = 40;           // [20:5:100] Straight segment at end
+// Outer edge (start): Straight segment parallel to bed perimeter for easy grabbing
+// Inner end (center): NO lead-out! (would intersect other coils)
+lead_in_mm = 40;            // [0:5:100] Straight segment at START (outer edge, safe!)
 
 /* [Manufacturing] */
 edge_radius_mm = 0.3;       // [0:0.05:1.0] Edge rounding radius (0 = sharp corners, >0 = rounded)
@@ -105,84 +108,83 @@ function deduplicate_path(path, i=1, result=[]) =
         deduplicate_path(path, i+1, concat(result, [path[i]]));  // Add point
 
 // ============================================================================
-// SPIRAL PATH GENERATOR
+// SPIRAL PATH GENERATOR - INWARD SPIRAL
 // ============================================================================
-// Generates Archimedean spiral path with iterative length accumulation
+// Generates INWARD Archimedean spiral starting from bed edge, spiraling to center
 // Returns list of [x, y, z] points including lead-in and lead-out segments
 
 function spiral_points(
     target_len = strip_length_mm,
-    r0 = min_inner_radius_mm,
+    r_max = max_bed_diameter_mm / 2,  // Start at bed edge
+    r_min = min_center_radius_mm,     // Stop at center
     pitch = spiral_pitch_mm,
     step = step_mm,
     lead_in = lead_in_mm,
-    lead_out = lead_out_mm,
     complete_turn = complete_coil_endpoint
 ) = 
     let(
-        // Generate spiral core points
-        spiral_core = generate_spiral_core(target_len, r0, pitch, step, complete_turn),
+        // Generate INWARD spiral core points
+        spiral_core = generate_inward_spiral_core(target_len, r_max, r_min, pitch, step, complete_turn),
         
-        // Extract first and last points for tangent calculation
+        // Extract first points for LEAD-IN (at outer edge)
         first_pt = spiral_core[0],
-        second_pt = spiral_core[1],
-        last_pt = spiral_core[len(spiral_core)-1],
-        second_last_pt = spiral_core[len(spiral_core)-2],
+        second_pt = len(spiral_core) > 1 ? spiral_core[1] : first_pt,
         
-        // Calculate tangent vectors
+        // Calculate tangent at START (pointing in direction of spiral travel)
         start_tangent = normalize_2d([second_pt[0] - first_pt[0], second_pt[1] - first_pt[1]]),
-        end_tangent = normalize_2d([last_pt[0] - second_last_pt[0], last_pt[1] - second_last_pt[1]]),
         
-        // Generate lead-in (straight segment before spiral)
-        lead_in_pts = [for (i=[0:step:lead_in]) 
-            [first_pt[0] - start_tangent[0] * (lead_in - i),
-             first_pt[1] - start_tangent[1] * (lead_in - i),
+        // Generate LEAD-IN at outer edge (extends BEYOND bed edge, straight)
+        // Goes backwards from first point along tangent direction
+        lead_in_pts = (lead_in > 0) ? [for (i=[lead_in:-step:step]) 
+            [first_pt[0] - start_tangent[0] * i,
+             first_pt[1] - start_tangent[1] * i,
              0]
-        ],
+        ] : [],
         
-        // Generate lead-out (straight segment after spiral)
-        lead_out_pts = [for (i=[step:step:lead_out]) 
-            [last_pt[0] + end_tangent[0] * i,
-             last_pt[1] + end_tangent[1] * i,
-             0]
-        ],
+        // NO lead-out at center (would intersect!)
         
-        // Combine all path segments
-        full_path = concat(lead_in_pts, spiral_core, lead_out_pts),
+        // Combine: lead-in + spiral (no lead-out!)
+        full_path = concat(lead_in_pts, spiral_core),
         
         // Deduplicate consecutive duplicate points (BOSL2 requirement)
         clean_path = deduplicate_path(full_path)
     )
     clean_path;
 
-// Generate spiral core with length accumulation
-function generate_spiral_core(target_len, r0, pitch, step, complete_turn) =
+// Generate INWARD spiral core with length accumulation
+function generate_inward_spiral_core(target_len, r_start, r_min, pitch, step, complete_turn) =
     let(
         a = pitch / (2 * PI),  // Spiral constant
-        result = generate_spiral_recursive(target_len, r0, a, step, 0, 0, [], complete_turn)
+        // INWARD spiral: r(θ) = r_start - a*θ (negative sign!)
+        result = generate_inward_spiral_recursive(target_len, r_start, r_min, a, step, 0, 0, [], complete_turn)
     )
     result;
 
-// Recursive spiral generation with length tracking
-function generate_spiral_recursive(
+// Recursive INWARD spiral generation with length tracking
+function generate_inward_spiral_recursive(
     target_len,
-    r0,
+    r_start,
+    r_min,
     a,
     step,
     theta,
     accum_len,
     points,
     complete_turn,
-    max_theta = 100  // Safety limit: ~16 full rotations
+    max_theta = 100  // Safety limit
 ) =
     // Stop conditions
     (theta > max_theta) ? points :  // Safety limit
+    let(
+        // INWARD spiral: decrease radius as theta increases
+        r = r_start - a * theta
+    )
+    (r < r_min) ? points :  // Stop when reaching center
     (!complete_turn && accum_len >= target_len) ? points :  // Exact length reached
     (complete_turn && accum_len >= target_len && (theta % (2*PI)) < 0.1) ? points :  // Complete turn
     
     let(
-        // Calculate current point on Archimedean spiral
-        r = r0 + a * theta,
+        // Calculate current point on spiral
         x = r * cos(theta * 180 / PI),
         y = r * sin(theta * 180 / PI),
         current_pt = [x, y, 0],
@@ -191,12 +193,12 @@ function generate_spiral_recursive(
         len_increment = (len(points) == 0) ? 0 : distance_3d(points[len(points)-1], current_pt),
         new_accum_len = accum_len + len_increment,
         
-        // Adaptive step: smaller delta_theta as radius increases (maintains consistent chord length)
-        delta_theta = step / max(r, r0),
+        // Adaptive step: adjust based on radius
+        delta_theta = step / max(r, 1),
         new_points = concat(points, [current_pt])
     )
-    generate_spiral_recursive(
-        target_len, r0, a, step, 
+    generate_inward_spiral_recursive(
+        target_len, r_start, r_min, a, step, 
         theta + delta_theta, 
         new_accum_len, 
         new_points,
@@ -266,6 +268,9 @@ module generate_ties(path_pts, pitch, width, tie_width, tie_thickness, tie_inter
 // MAIN GEOMETRY GENERATION
 // ============================================================================
 
+// AUTOMATIC PITCH CALCULATION: Ensures proper spacing
+spiral_pitch_mm = strip_width_mm + clearance_mm;
+
 // Parameter validation
 total_stripe_width = sum_widths(layers);
 width_tolerance = 0.01;
@@ -276,16 +281,17 @@ assert(
 );
 
 assert(
-    spiral_pitch_mm >= strip_width_mm + clearance_mm,
-    str("ERROR: spiral_pitch_mm (", spiral_pitch_mm, ") must be >= strip_width_mm (", strip_width_mm, ") + clearance_mm (", clearance_mm, ") = ", strip_width_mm + clearance_mm)
+    clearance_mm >= 0.5,
+    str("ERROR: clearance_mm (", clearance_mm, ") must be >= 0.5mm to prevent coil overlap! (1.0mm recommended)")
 );
 
-echo(str("=== GUITAR BINDING GENERATOR ==="));
-echo(str("Target length: ", strip_length_mm, "mm"));
-echo(str("Strip dimensions: ", strip_width_mm, "mm × ", strip_height_mm, "mm"));
-echo(str("Layers: ", len(layers), " stripe(s)"));
-echo(str("Spiral pitch: ", spiral_pitch_mm, "mm, Inner radius: ", min_inner_radius_mm, "mm"));
-echo(str("Generating path... (this may take 30-60 seconds)"));
+echo(str("=== GUITAR BINDING GENERATOR (INWARD Spiral) ==="));
+echo(str("Strategy: Start at bed edge (", max_bed_diameter_mm/2, "mm radius), spiral INWARD to center"));
+echo(str("Strip dimensions: ", strip_width_mm, "mm WIDE × ", strip_height_mm, "mm TALL"));
+echo(str("Spiral: outer ", max_bed_diameter_mm/2, "mm → inner ", min_center_radius_mm, "mm"));
+echo(str("Pitch: ", spiral_pitch_mm, "mm (auto: width ", strip_width_mm, " + clearance ", clearance_mm, ")"));
+echo(str("Clearance: ", clearance_mm, "mm gap between coils"));
+echo(str("Generating path... (this may take 1-2 minutes)"));
 
 // Generate spiral path
 path = spiral_points();

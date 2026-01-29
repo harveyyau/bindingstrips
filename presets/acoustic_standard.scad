@@ -4,12 +4,20 @@
 /*
   FOR: Dreadnought, OM, 000, Grand Auditorium guitars
   
-  TYPICAL PERIMETER: 850-950mm
-  THIS PRESET PRODUCES: 1000mm usable length (includes 15% safety margin)
+  TYPICAL PERIMETER: 850-950mm  
+  THIS PRESET PRODUCES: ~1600mm usable length (bed-filling spiral!)
   
-  PRINT TIME: ~4-6 hours (Bambu X1C, 0.2mm layers, 100mm/s)
-  FILAMENT NEEDED: ~40g ABS (single color)
-  BED REQUIREMENT: Fits Bambu X1/P1S (256×256mm bed)
+  STRATEGY: Fills entire 240mm bed diameter for MAXIMUM outer bend radius
+  → Starts at bed edge (120mm radius), spirals INWARD to center
+  → Outer coils have gentle 120mm radius = very easy to unbend and install!
+  → Inner coils are tighter but shorter segments = still workable
+  → ~1600mm total = enough for most guitars with margin to spare
+  
+  PRINT TIME: ~2-3 hours (Bambu X1C, 0.2mm layers, 100mm/s)
+  FILAMENT NEEDED: ~30-40g ABS (single color)
+  BED REQUIREMENT: Fills Bambu X1/P1S (256×256mm bed) completely
+  
+  DIMENSIONS: 1.5mm WIDE × 6mm TALL (typical guitar binding profile)
   
   DIMENSIONS:
   - Width: 6mm (standard binding width)
@@ -35,20 +43,22 @@
 
 include <../src/guitar_binding.scad>
 
-// Override parameters for acoustic standard binding
-strip_length_mm = 1000;  // [500:50:2000] Usable length after uncoiling
-strip_width_mm = 6.0;    // [3.0:0.5:10.0] Binding width
-strip_height_mm = 1.0;   // [0.5:0.1:3.0] Binding thickness (thinner = easier to uncoil)
+// Override parameters - BED-FILLING INWARD SPIRAL
+strip_length_mm = 1600;  // [1000:100:3000] Typical binding length
+strip_width_mm = 1.5;    // [1.0:0.5:3.0] THIN dimension (typical: 1.5mm)
+strip_height_mm = 6.0;   // [3.0:0.5:10.0] TALL dimension (typical: 6mm)
 
 // Single color binding
 enable_purfling = false;
-layers = [["Binding", 6.0]];
+layers = [["Binding", 1.5]];
 
-// Optimized spiral parameters to maximize bed usage and prevent overlap
-min_inner_radius_mm = 30;   // Larger for easier uncoiling
-spiral_pitch_mm = 10.0;     // Width (6mm) + clearance (4mm) = 10mm
-clearance_mm = 4.0;         // CRITICAL: 4mm gap prevents coils from fusing!
+// BED-FILLING PARAMETERS: Start at edge, spiral inward
+max_bed_diameter_mm = 240;  // Full bed diameter (fills 256mm bed)
+min_center_radius_mm = 10;  // Spiral to center (10mm minimum)
+clearance_mm = 1.0;         // 1mm gap (pitch auto = 1.5+1.0=2.5mm)
 
-echo("=== ACOUSTIC STANDARD BINDING ===");
+echo("=== ACOUSTIC STANDARD BINDING (Inward Spiral) ===");
 echo("For: Dreadnought, OM, 000, Grand Auditorium");
-echo("Output: 1000mm × 6mm × 1.5mm");
+echo("Output: ~1600mm × 1.5mm WIDE × 6mm TALL (fills 240mm bed)");
+echo("Spiral: 120mm outer radius (GENTLE!) → 10mm inner");
+echo("Pitch: 2.5mm (1.5mm binding + 1mm clearance)");
